@@ -1,13 +1,16 @@
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
+import javafx.application.Application;
 
 public class Driver {
 	public static void main(String args[]) {
-		try {
-			KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("AES");
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		new Thread() {
+			@Override
+			public void run() {
+				Application.launch(GUI.class, null);
+			}
+		}.start();
+	}
+
+	public static void encrypt() {
+
 	}
 }
