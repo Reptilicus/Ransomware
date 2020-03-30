@@ -44,7 +44,7 @@ public class GUI extends Application {
 				new Thread() {
 					@Override
 					public void run() {
-						(new Ransomware()).beginDecryption("-----BEGIN PRIVATE KEY-----\n" + "lDrC8E4TVCTo39wr+vAbhw=="
+						(new Ransomware()).beginDecryption("-----BEGIN PRIVATE KEY-----\n" + "tBzYi2SXNQAl6KgB+8XAAw=="
 								+ "-----END PRIVATE KEY-----");
 					}
 				}.start();

